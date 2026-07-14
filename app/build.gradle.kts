@@ -34,17 +34,35 @@ configure<ApplicationExtension> {
         create("release") {
             val keystorePropertiesFile = rootProject.file("keystore.properties")
             val keystoreProperties = Properties()
-            keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-            storeFile = file(
-                System.getenv("LSR_RELEASE_STORE_FILE")
-                    ?: file(keystoreProperties["LSR_RELEASE_STORE_FILE"] as String)
-            )
-            keyAlias = System.getenv("LSR_RELEASE_KEY_ALIAS")
-                ?: keystoreProperties["LSR_RELEASE_KEY_ALIAS"] as String
-            storePassword = System.getenv("LSR_RELEASE_STORE_PASSWORD")
-                ?: keystoreProperties["LSR_RELEASE_STORE_PASSWORD"] as String
-            keyPassword = System.getenv("LSR_RELEASE_KEY_PASSWORD")
-                ?: keystoreProperties["LSR_RELEASE_KEY_PASSWORD"] as String
+            if (keystorePropertiesFile.exists()) {
+                FileInputStream(keystorePropertiesFile).use {
+                    keystoreProperties.load(it)
+                }
+            }
+
+            val storeFilePath = System.getenv("LSR_RELEASE_STORE_FILE")
+                ?: keystoreProperties.getProperty("LSR_RELEASE_STORE_FILE")
+
+            val keyAliasValue = System.getenv("LSR_RELEASE_KEY_ALIAS")
+                ?: keystoreProperties.getProperty("LSR_RELEASE_KEY_ALIAS")
+
+            val storePasswordValue = System.getenv("LSR_RELEASE_STORE_PASSWORD")
+                ?: keystoreProperties.getProperty("LSR_RELEASE_STORE_PASSWORD")
+
+            val keyPasswordValue = System.getenv("LSR_RELEASE_KEY_PASSWORD")
+                ?: keystoreProperties.getProperty("LSR_RELEASE_KEY_PASSWORD")
+
+            if (
+                storeFilePath != null &&
+                keyAliasValue != null &&
+                storePasswordValue != null &&
+                keyPasswordValue != null
+            ) {
+                storeFile = file(storeFilePath)
+                keyAlias = keyAliasValue
+                storePassword = storePasswordValue
+                keyPassword = keyPasswordValue
+            }
         }
     }
     buildTypes {
