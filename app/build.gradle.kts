@@ -93,10 +93,13 @@ configure<ApplicationExtension> {
 }
 
 dependencies {
+    // Baseline
+    "baselineProfile"(project(":baselineprofile"))
+    implementation(libs.androidx.profileinstaller)
+
     // Data Store
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.profileinstaller)
 
     // Debugging
     implementation(libs.timber)
@@ -104,7 +107,6 @@ dependencies {
     // Hilt
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
-    "baselineProfile"(project(":baselineprofile"))
     ksp(libs.hilt.android.compiler)
 
     // Material
@@ -136,6 +138,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
 
+    // Test
     testImplementation(libs.junit)
     testImplementation(libs.jetbrains.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
