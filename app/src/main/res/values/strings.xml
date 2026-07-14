@@ -1,0 +1,28 @@
+<resources>
+    <string name="action_pause">Pause</string>
+    <string name="action_stop">Stop</string>
+    <string name="app_name">Unlock Habit</string>
+    <string name="app_selection_card_title">Auto-Launch App</string>
+    <string name="change_application">Change Application</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="display_over_other_apps_rationale">Launches your selected app after device is unlocked</string>
+    <string name="display_over_other_apps_title">Display Over Other Apps</string>
+    <string name="granted">Granted</string>
+    <string name="not_granted">Not Granted</string>
+    <string name="notification_channel_description">Notifications for the background service</string>
+    <string name="notification_channel_name">Main Service Notifications</string>
+    <string name="notification_content">Application is running in the background</string>
+    <string name="notification_permission_rationale">Keeps auto-launch service running in background</string>
+    <string name="notification_title">Auto Launch is On</string>
+    <string name="pause">Pause</string>
+    <string name="permissions_required">Permission required</string>
+    <string name="post_notification_title">Allow Notification</string>
+    <string name="resume">Resume</string>
+    <string name="select_app">Select App</string>
+    <string name="select_application">Select Application</string>
+    <string name="service_disabled_desc">Your selected app will NOT open automatically after you unlock your device.</string>
+    <string name="service_disabled_title">Auto Launch: Off</string>
+    <string name="service_enabled_desc">Your selected app will open automatically after you unlock your device.</string>
+    <string name="service_enabled_title">Auto launch: ON</string>
+    <string name="status">Status</string>
+</resources>
