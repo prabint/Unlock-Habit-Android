@@ -45,4 +45,27 @@ class UserPreferencesRepositoryTest {
             Assert.assertEquals(testPackage, awaitItem())
         }
     }
+
+    @Test
+    fun `userEnabledService emits false by default`() = testScope.runTest {
+        repository.userEnabledService.test {
+            Assert.assertEquals(false, awaitItem())
+        }
+    }
+
+    @Test
+    fun `setUserEnabledService updates the flow correctly`() = testScope.runTest {
+        // Initial state
+        repository.userEnabledService.test {
+            Assert.assertEquals(false, awaitItem())
+
+            // Update to true
+            repository.setUserEnabledService(true)
+            Assert.assertEquals(true, awaitItem())
+
+            // Update to false
+            repository.setUserEnabledService(false)
+            Assert.assertEquals(false, awaitItem())
+        }
+    }
 }

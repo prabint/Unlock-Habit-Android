@@ -7,22 +7,27 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import prabin.timsina.unlockhabit.repository.UserPreferencesRepository
-import prabin.timsina.unlockhabit.services.ServiceTracker
+import prabin.timsina.unlockhabit.services.PausedTracker
 import prabin.timsina.unlockhabit.utils.ApplicationScope
 import timber.log.Timber
 import javax.inject.Inject
 
 class ScreenUnlockReceiver @Inject constructor(
     private val repository: UserPreferencesRepository,
-    private val serviceTracker: ServiceTracker,
+    private val pausedTracker: PausedTracker,
     @param:ApplicationScope private val scope: CoroutineScope,
 ) : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_USER_PRESENT) {
+            val pendingResult = goAsync()
             scope.launch {
-                val pkg = repository.autoLaunchPackage.firstOrNull()
-                if (pkg != null && !serviceTracker.isPaused.value) {
-                    launchApp(context, pkg)
+                try {
+                    val pkg = repository.autoLaunchPackage.firstOrNull()
+                    if (pkg != null && !pausedTracker.isPaused.value) {
+                        launchApp(context, pkg)
+                    }
+                } finally {
+                    pendingResult.finish()
                 }
             }
         }

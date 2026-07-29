@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import prabin.timsina.unlockhabit.broadcasts.ScreenUnlockReceiver
 import prabin.timsina.unlockhabit.notifications.AppNotificationManager
 import prabin.timsina.unlockhabit.notifications.AppNotificationManager.Companion.FGS_NOTIFICATION_ID
+import prabin.timsina.unlockhabit.repository.UserPreferencesRepository
 import prabin.timsina.unlockhabit.utils.ApplicationScope
 import javax.inject.Inject
 
@@ -18,7 +19,7 @@ import javax.inject.Inject
 class MainService : Service() {
 
     @Inject
-    lateinit var serviceTracker: ServiceTracker
+    lateinit var pausedTracker: PausedTracker
 
     @Inject
     lateinit var appNotificationManager: AppNotificationManager
@@ -30,9 +31,11 @@ class MainService : Service() {
     @Inject
     lateinit var screenReceiver: ScreenUnlockReceiver
 
+    @Inject
+    lateinit var userPreferencesRepository: UserPreferencesRepository
+
     override fun onCreate() {
         super.onCreate()
-        serviceTracker.setServiceRunning(true)
         startAsForeground()
 
         val filter = IntentFilter(Intent.ACTION_USER_PRESENT)
@@ -42,13 +45,14 @@ class MainService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             AppNotificationManager.ACTION_STOP -> {
+                scope.launch { userPreferencesRepository.setUserEnabledService(enabled = false) }
                 stopSelf()
             }
 
             AppNotificationManager.ACTION_PAUSE -> {
                 scope.launch {
-                    val newPausedState = !serviceTracker.isPaused.value
-                    serviceTracker.setPaused(newPausedState)
+                    val newPausedState = !pausedTracker.isPaused.value
+                    pausedTracker.setFunctionalityPaused(newPausedState)
                     appNotificationManager.notifyMainServiceFGSNotification(newPausedState)
                 }
             }
@@ -58,9 +62,7 @@ class MainService : Service() {
     }
 
     private fun startAsForeground() {
-        val notification = appNotificationManager.createMainServiceFGSNotification(
-            isPaused = serviceTracker.isPaused.value
-        )
+        val notification = appNotificationManager.createMainServiceFGSNotification(isPaused = false)
         startForeground(FGS_NOTIFICATION_ID, notification)
     }
 
@@ -68,8 +70,7 @@ class MainService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        serviceTracker.setServiceRunning(false)
-        serviceTracker.setPaused(false)
+        pausedTracker.setFunctionalityPaused(false)
         unregisterReceiver(screenReceiver)
     }
 

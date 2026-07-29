@@ -82,7 +82,7 @@ private fun Content(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = when {
-                                uiState.isServiceRunning && uiState.isServicePaused -> stringResource(R.string.service_disabled_title)
+                                uiState.isPaused -> stringResource(R.string.service_disabled_title)
                                 uiState.isServiceRunning -> stringResource(R.string.service_enabled_title)
                                 else -> stringResource(R.string.service_disabled_title)
                             },
@@ -91,7 +91,7 @@ private fun Content(
                         )
                         Text(
                             text = when {
-                                uiState.isServiceRunning && uiState.isServicePaused -> stringResource(R.string.service_disabled_desc)
+                                uiState.isPaused -> stringResource(R.string.service_disabled_desc)
                                 uiState.isServiceRunning -> stringResource(R.string.service_enabled_desc)
                                 else -> stringResource(R.string.service_disabled_desc)
                             },
@@ -102,7 +102,7 @@ private fun Content(
                     Spacer(modifier = Modifier.width(4.dp))
                     Switch(
                         checked = uiState.isServiceRunning,
-                        onCheckedChange = { onAction(OnClickToggleService) }
+                        onCheckedChange = { onAction(OnClickToggleService(it)) }
                     )
                 }
             }

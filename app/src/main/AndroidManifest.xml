@@ -9,6 +9,9 @@
     <!--  Setting: Display over other apps -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- Launches app service automatically after device restarts if user had it enabled previously. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:name=".MainApplication"
         android:allowBackup="true"
@@ -37,6 +40,15 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_TYPE"
                 android:value="This service monitors screen unlock events to automatically launch a user-selected application." />
         </service>
+        <receiver
+            android:name=".broadcasts.ServiceRestartReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <!-- Only allows apps with visible icons. Better than using "QUERY_ALL_PACKAGES", unless really needed.
