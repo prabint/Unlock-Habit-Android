@@ -20,6 +20,7 @@ class DefaultUserPreferencesRepository @Inject constructor(
     companion object {
         private val KEY_AUTO_LAUNCH_PACKAGE = stringPreferencesKey("auto_launch_app")
         private val KEY_USER_ENABLED_SERVICE = booleanPreferencesKey("user_enabled_service")
+        private val KEY_SHOULD_LAUNCH_DIRECTLY = booleanPreferencesKey("should_launch_directly")
     }
 
     override val autoLaunchPackage: Flow<String?> = dataStore.data
@@ -45,6 +46,24 @@ class DefaultUserPreferencesRepository @Inject constructor(
         .map { preferences ->
             preferences[KEY_USER_ENABLED_SERVICE] ?: false
         }
+
+    override val shouldLaunchDirectly: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }
+        .map { preferences ->
+            preferences[KEY_SHOULD_LAUNCH_DIRECTLY] ?: true
+        }
+
+    override suspend fun setShouldLaunchDirectly(autoLaunch: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[KEY_SHOULD_LAUNCH_DIRECTLY] = autoLaunch
+        }
+    }
 
     override suspend fun setAutoLaunchPackage(packageName: String) {
         dataStore.edit { preferences ->

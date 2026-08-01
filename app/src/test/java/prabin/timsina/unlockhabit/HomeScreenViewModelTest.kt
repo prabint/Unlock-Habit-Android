@@ -48,6 +48,7 @@ class HomeScreenViewModelTest {
     private val isServiceEnabledFlow = MutableStateFlow(false)
     private val isPausedFlow = MutableStateFlow(false)
     private val preferredPkgFlow = MutableStateFlow<String?>(null)
+    private val shouldLaunchDirectlyFlow = MutableStateFlow(true)
 
     @Before
     fun setup() {
@@ -61,6 +62,7 @@ class HomeScreenViewModelTest {
         every { pausedTracker.isPaused } returns isPausedFlow
         every { userPreferencesRepository.autoLaunchPackage } returns preferredPkgFlow
         every { userPreferencesRepository.userEnabledService } returns isServiceEnabledFlow
+        every { userPreferencesRepository.shouldLaunchDirectly } returns shouldLaunchDirectlyFlow
     }
 
     @After
@@ -248,5 +250,70 @@ class HomeScreenViewModelTest {
 
         unmockkStatic("prabin.timsina.unlockhabit.permissions.PermissionsUtilsKt")
         unmockkObject(MainService)
+    }
+
+    @Test
+    fun `uiState updates when shouldLaunchDirectly changes`() = runTest {
+        val viewModel = HomeScreenViewModel(
+            context = context,
+            pausedTracker = pausedTracker,
+            userPreferencesRepository = userPreferencesRepository,
+            installedAppRepository = installedAppRepository,
+        )
+
+        viewModel.uiState.test {
+            assertTrue(awaitItem().shouldLaunchDirectly) // Initial state
+
+            shouldLaunchDirectlyFlow.value = false
+            assertFalse(awaitItem().shouldLaunchDirectly)
+        }
+    }
+
+    @Test
+    fun `onAction OnClickLaunchDirectly updates repository`() = runTest {
+        coEvery { userPreferencesRepository.setShouldLaunchDirectly(true) } returns Unit
+
+        val viewModel = HomeScreenViewModel(
+            context = context,
+            pausedTracker = pausedTracker,
+            userPreferencesRepository = userPreferencesRepository,
+            installedAppRepository = installedAppRepository,
+        )
+
+        viewModel.onAction(HomeScreenAction.OnClickLaunchDirectly)
+        advanceUntilIdle()
+        coVerify { userPreferencesRepository.setShouldLaunchDirectly(true) }
+    }
+
+    @Test
+    fun `onAction OnClickShowOverlay updates repository`() = runTest {
+        coEvery { userPreferencesRepository.setShouldLaunchDirectly(false) } returns Unit
+
+        val viewModel = HomeScreenViewModel(
+            context = context,
+            pausedTracker = pausedTracker,
+            userPreferencesRepository = userPreferencesRepository,
+            installedAppRepository = installedAppRepository,
+        )
+
+        viewModel.onAction(HomeScreenAction.OnClickShowOverlay)
+        advanceUntilIdle()
+        coVerify { userPreferencesRepository.setShouldLaunchDirectly(false) }
+    }
+
+    @Test
+    fun `onAction OnDismissRationalDialog updates uiState`() = runTest {
+        val viewModel = HomeScreenViewModel(
+            context = context,
+            pausedTracker = pausedTracker,
+            userPreferencesRepository = userPreferencesRepository,
+            installedAppRepository = installedAppRepository,
+        )
+
+        viewModel.onAction(HomeScreenAction.OnDismissRationalDialog)
+
+        viewModel.uiState.test {
+            assertFalse(awaitItem().showRationaleDialog)
+        }
     }
 }

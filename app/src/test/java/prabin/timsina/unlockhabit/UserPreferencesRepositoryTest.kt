@@ -68,4 +68,20 @@ class UserPreferencesRepositoryTest {
             Assert.assertEquals(false, awaitItem())
         }
     }
+
+    @Test
+    fun `shouldLaunchDirectly emits true by default`() = testScope.runTest {
+        repository.shouldLaunchDirectly.test {
+            Assert.assertEquals(true, awaitItem())
+        }
+    }
+
+    @Test
+    fun `setShouldLaunchDirectly updates the flow with new value`() = testScope.runTest {
+        repository.setShouldLaunchDirectly(false)
+
+        repository.shouldLaunchDirectly.test {
+            Assert.assertEquals(false, awaitItem())
+        }
+    }
 }
