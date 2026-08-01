@@ -28,7 +28,8 @@ class ServiceRestartReceiver : BroadcastReceiver() {
             val pendingResult = goAsync()
             scope.launch {
                 try {
-                    if (repository.userEnabledService.first()) {
+                    val preferences = repository.preferences.first()
+                    if (preferences.userEnabledService) {
                         MainService.startService(context)
                     }
                 } finally {

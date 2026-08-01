@@ -1,5 +1,7 @@
 package prabin.timsina.unlockhabit.ui.screens.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,9 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Surface
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +52,8 @@ fun HomeScreen(
         uiState = uiState,
         onAction = { viewModel.onAction(it) },
         onClickAppPicker = { onClickAppPicker() },
+        onClickLaunchDirectly = { viewModel.onAction(HomeScreenAction.OnClickLaunchDirectly) },
+        onClickShowOverlay = { viewModel.onAction(HomeScreenAction.OnClickShowOverlay) }
     )
 }
 
@@ -56,59 +62,15 @@ private fun Content(
     uiState: HomeScreenState,
     onAction: (HomeScreenAction) -> Unit,
     onClickAppPicker: () -> Unit,
+    onClickLaunchDirectly: () -> Unit,
+    onClickShowOverlay: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
-        if (uiState.preferredApp != null) {
-            Text(
-                text = stringResource(R.string.status),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = when {
-                                uiState.isPaused -> stringResource(R.string.service_disabled_title)
-                                uiState.isServiceRunning -> stringResource(R.string.service_enabled_title)
-                                else -> stringResource(R.string.service_disabled_title)
-                            },
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = when {
-                                uiState.isPaused -> stringResource(R.string.service_disabled_desc)
-                                uiState.isServiceRunning -> stringResource(R.string.service_enabled_desc)
-                                else -> stringResource(R.string.service_disabled_desc)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Switch(
-                        checked = uiState.isServiceRunning,
-                        onCheckedChange = { onAction(OnClickToggleService(it)) }
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = stringResource(R.string.app_selection_card_title),
@@ -133,7 +95,7 @@ private fun Content(
                         Text(text = appInfo.name, style = MaterialTheme.typography.titleMedium)
                     }
                 } ?: Text(
-                    text = "Pick an app to automatically open every time you unlock your phone.",
+                    text = stringResource(R.string.pick_app_instruction),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -153,6 +115,93 @@ private fun Content(
                 }
             }
         }
+
+        if (uiState.preferredApp != null) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = stringResource(R.string.status),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large
+            ) {
+                ListItem(
+                    headlineContent = {
+                        Text(
+                            text = stringResource(R.string.home_service_toggle_title),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            text = stringResource(R.string.home_service_toggle_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = uiState.isServiceRunning,
+                            onCheckedChange = { onAction(OnClickToggleService(it)) }
+                        )
+                    }
+                )
+
+                AnimatedVisibility(visible = uiState.isServiceRunning) {
+                    Column {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+
+                        Text(
+                            text = stringResource(R.string.display_option),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+                        )
+
+                        ListItem(
+                            headlineContent = {
+                                Text(stringResource(R.string.launch_directly_title))
+                            },
+                            supportingContent = {
+                                Text(stringResource(R.string.launch_directly_desc))
+                            },
+                            trailingContent = {
+                                RadioButton(
+                                    selected = uiState.shouldLaunchDirectly,
+                                    onClick = null
+                                )
+                            },
+                            modifier = Modifier.clickable { onClickLaunchDirectly() }
+                        )
+
+                        ListItem(
+                            headlineContent = {
+                                Text(stringResource(R.string.show_reminder_first))
+                            },
+                            supportingContent = {
+                                Text(stringResource(R.string.overlay_row_desc))
+                            },
+                            trailingContent = {
+                                RadioButton(
+                                    selected = !uiState.shouldLaunchDirectly,
+                                    onClick = null
+                                )
+                            },
+                            modifier = Modifier.clickable { onClickShowOverlay() }
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -164,6 +213,8 @@ private fun PreviewContentNoAppSelected() {
             uiState = HomeScreenState(),
             onAction = {},
             onClickAppPicker = {},
+            onClickLaunchDirectly = {},
+            onClickShowOverlay = {},
         )
     }
 }
@@ -183,6 +234,8 @@ private fun PreviewContentAppSelected() {
             ),
             onAction = {},
             onClickAppPicker = {},
+            onClickLaunchDirectly = {},
+            onClickShowOverlay = {},
         )
     }
 }

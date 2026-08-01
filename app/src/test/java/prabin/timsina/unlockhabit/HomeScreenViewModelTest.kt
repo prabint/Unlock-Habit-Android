@@ -27,7 +27,9 @@ import org.junit.Before
 import org.junit.Test
 import prabin.timsina.unlockhabit.permissions.isDrawOverPermissionGranted
 import prabin.timsina.unlockhabit.permissions.isPermissionGranted
+import prabin.timsina.unlockhabit.repository.DefaultUserPreferencesRepository.Companion.MAX_HEARTS
 import prabin.timsina.unlockhabit.repository.UserPreferencesRepository
+import prabin.timsina.unlockhabit.repository.models.UserPreferences
 import prabin.timsina.unlockhabit.services.MainService
 import prabin.timsina.unlockhabit.services.PausedTracker
 import prabin.timsina.unlockhabit.ui.screens.app_picker.AppInfo
@@ -45,9 +47,17 @@ class HomeScreenViewModelTest {
     private val installedAppRepository: InstalledAppRepository = mockk()
 
     // flows used to emit values to the ViewModel
-    private val isServiceEnabledFlow = MutableStateFlow(false)
+    private val preferencesFlow = MutableStateFlow(
+        UserPreferences(
+            autoLaunchPackage = null,
+            userEnabledService = false,
+            shouldLaunchDirectly = true,
+            heartsLeft = MAX_HEARTS,
+            heartsResetAt = 0L,
+            dailyUnlocks = emptyList()
+        )
+    )
     private val isPausedFlow = MutableStateFlow(false)
-    private val preferredPkgFlow = MutableStateFlow<String?>(null)
 
     @Before
     fun setup() {
@@ -59,8 +69,7 @@ class HomeScreenViewModelTest {
 
         // Setup the flows that the ViewModel observes
         every { pausedTracker.isPaused } returns isPausedFlow
-        every { userPreferencesRepository.autoLaunchPackage } returns preferredPkgFlow
-        every { userPreferencesRepository.userEnabledService } returns isServiceEnabledFlow
+        every { userPreferencesRepository.preferences } returns preferencesFlow
     }
 
     @After
@@ -84,7 +93,7 @@ class HomeScreenViewModelTest {
             assertFalse(initialState.isPaused)
 
             // Update service running state
-            isServiceEnabledFlow.value = true
+            preferencesFlow.value = preferencesFlow.value.copy(userEnabledService = true)
             assertTrue(awaitItem().isServiceRunning)
 
             // Update service paused state
@@ -117,7 +126,7 @@ class HomeScreenViewModelTest {
             assertEquals(null, awaitItem().preferredApp)
 
             // Simulate preferred package changing in DataStore
-            preferredPkgFlow.value = testPackage
+            preferencesFlow.value = preferencesFlow.value.copy(autoLaunchPackage = testPackage)
 
             // Verify the UI state now contains the mapped AppInfo
             assertEquals(expectedApp, awaitItem().preferredApp)
@@ -145,11 +154,11 @@ class HomeScreenViewModelTest {
             assertEquals(null, awaitItem().preferredApp) // Initial state
 
             // 1. Transition from null to Test App
-            preferredPkgFlow.value = testPackage
+            preferencesFlow.value = preferencesFlow.value.copy(autoLaunchPackage = testPackage)
             assertEquals(testApp, awaitItem().preferredApp)
 
             // 2. Transition from Test App back to null (simulating package removed/not found)
-            preferredPkgFlow.value = unknownPackage
+            preferencesFlow.value = preferencesFlow.value.copy(autoLaunchPackage = unknownPackage)
             assertEquals(null, awaitItem().preferredApp)
         }
     }
@@ -192,7 +201,7 @@ class HomeScreenViewModelTest {
         every { isDrawOverPermissionGranted(any()) } returns true
         every { MainService.startService(any()) } returns Unit
         coEvery { userPreferencesRepository.setUserEnabledService(any()) } returns Unit
-        isServiceEnabledFlow.value = false
+        preferencesFlow.value = preferencesFlow.value.copy(userEnabledService = false)
         isPausedFlow.value = false // VM starts service when NOT paused
 
         val viewModel = HomeScreenViewModel(
@@ -226,7 +235,7 @@ class HomeScreenViewModelTest {
         every { isDrawOverPermissionGranted(any()) } returns true
         every { MainService.stopService(any()) } returns Unit
         coEvery { userPreferencesRepository.setUserEnabledService(any()) } returns Unit
-        isServiceEnabledFlow.value = true
+        preferencesFlow.value = preferencesFlow.value.copy(userEnabledService = true)
         isPausedFlow.value = true // VM stops service when paused
 
         val viewModel = HomeScreenViewModel(
@@ -248,5 +257,70 @@ class HomeScreenViewModelTest {
 
         unmockkStatic("prabin.timsina.unlockhabit.permissions.PermissionsUtilsKt")
         unmockkObject(MainService)
+    }
+
+    @Test
+    fun `uiState updates when shouldLaunchDirectly changes`() = runTest {
+        val viewModel = HomeScreenViewModel(
+            context = context,
+            pausedTracker = pausedTracker,
+            userPreferencesRepository = userPreferencesRepository,
+            installedAppRepository = installedAppRepository,
+        )
+
+        viewModel.uiState.test {
+            assertTrue(awaitItem().shouldLaunchDirectly) // Initial state
+
+            preferencesFlow.value = preferencesFlow.value.copy(shouldLaunchDirectly = false)
+            assertFalse(awaitItem().shouldLaunchDirectly)
+        }
+    }
+
+    @Test
+    fun `onAction OnClickLaunchDirectly updates repository`() = runTest {
+        coEvery { userPreferencesRepository.setShouldLaunchDirectly(true) } returns Unit
+
+        val viewModel = HomeScreenViewModel(
+            context = context,
+            pausedTracker = pausedTracker,
+            userPreferencesRepository = userPreferencesRepository,
+            installedAppRepository = installedAppRepository,
+        )
+
+        viewModel.onAction(HomeScreenAction.OnClickLaunchDirectly)
+        advanceUntilIdle()
+        coVerify { userPreferencesRepository.setShouldLaunchDirectly(true) }
+    }
+
+    @Test
+    fun `onAction OnClickShowOverlay updates repository`() = runTest {
+        coEvery { userPreferencesRepository.setShouldLaunchDirectly(false) } returns Unit
+
+        val viewModel = HomeScreenViewModel(
+            context = context,
+            pausedTracker = pausedTracker,
+            userPreferencesRepository = userPreferencesRepository,
+            installedAppRepository = installedAppRepository,
+        )
+
+        viewModel.onAction(HomeScreenAction.OnClickShowOverlay)
+        advanceUntilIdle()
+        coVerify { userPreferencesRepository.setShouldLaunchDirectly(false) }
+    }
+
+    @Test
+    fun `onAction OnDismissRationalDialog updates uiState`() = runTest {
+        val viewModel = HomeScreenViewModel(
+            context = context,
+            pausedTracker = pausedTracker,
+            userPreferencesRepository = userPreferencesRepository,
+            installedAppRepository = installedAppRepository,
+        )
+
+        viewModel.onAction(HomeScreenAction.OnDismissRationalDialog)
+
+        viewModel.uiState.test {
+            assertFalse(awaitItem().showRationaleDialog)
+        }
     }
 }

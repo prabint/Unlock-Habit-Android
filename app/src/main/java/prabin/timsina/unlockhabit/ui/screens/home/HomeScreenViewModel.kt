@@ -26,11 +26,14 @@ data class HomeScreenState(
     val isPaused: Boolean = false,
     val preferredApp: AppInfo? = null,
     val showRationaleDialog: Boolean = false,
+    val shouldLaunchDirectly: Boolean = true,
 )
 
 sealed interface HomeScreenAction {
     data class OnClickToggleService(val enable: Boolean) : HomeScreenAction
     data object OnDismissRationalDialog : HomeScreenAction
+    data object OnClickLaunchDirectly : HomeScreenAction
+    data object OnClickShowOverlay : HomeScreenAction
 }
 
 @HiltViewModel
@@ -46,14 +49,14 @@ class HomeScreenViewModel @Inject constructor(
     init {
         combine(
             pausedTracker.isPaused,
-            userPreferencesRepository.userEnabledService,
-            userPreferencesRepository.autoLaunchPackage,
-        ) { isPaused, isServiceRunning, preferredPkg ->
+            userPreferencesRepository.preferences,
+        ) { isPaused, preferences ->
             _uiState.update { state ->
                 state.copy(
                     isPaused = isPaused,
-                    isServiceRunning = isServiceRunning,
-                    preferredApp = preferredPkg?.let { packageName ->
+                    isServiceRunning = preferences.userEnabledService,
+                    shouldLaunchDirectly = preferences.shouldLaunchDirectly,
+                    preferredApp = preferences.autoLaunchPackage?.let { packageName ->
                         installedAppRepository.getAppInfo(
                             context = context,
                             packageName = packageName
@@ -87,6 +90,18 @@ class HomeScreenViewModel @Inject constructor(
 
             HomeScreenAction.OnDismissRationalDialog -> {
                 _uiState.update { it.copy(showRationaleDialog = false) }
+            }
+
+            HomeScreenAction.OnClickLaunchDirectly -> {
+                viewModelScope.launch {
+                    userPreferencesRepository.setShouldLaunchDirectly(true)
+                }
+            }
+
+            HomeScreenAction.OnClickShowOverlay -> {
+                viewModelScope.launch {
+                    userPreferencesRepository.setShouldLaunchDirectly(false)
+                }
             }
         }
     }
