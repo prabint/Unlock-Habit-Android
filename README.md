@@ -5,6 +5,13 @@ unlock your phone.
 
 The goal is simple: help you replace mindless phone checking with intentional habits.
 
+## Google Play
+
+Get it on google play
+<a href="https://play.google.com/store/apps/details?id=prabin.timsina.unlockhabit">
+<img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="55"/>
+</a>
+
 ## Why?
 
 I noticed a pattern in my daily routine. Whenever I had a few spare moments—waiting for a game to
@@ -48,10 +55,6 @@ time.
   <img src="assets/playstore/screenshot_home.png" width="300" alt="Home Screen">
   <img src="assets/playstore/screenshot_fgs.png" width="300" alt="Notification">
 </p>
-
-## Google Play
-
-*Coming soon.*
 
 ## Permissions
 
